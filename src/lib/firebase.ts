@@ -31,6 +31,6 @@ export const db = app ? getFirestore(app) : null as any;
 export const auth = app ? getAuth(app) : null as any;
 
 // Analytics initialization (Client-side only)
-export const analytics = typeof window !== "undefined"
+export const analytics = (typeof window !== "undefined" && app)
     ? isSupported().then(yes => yes ? getAnalytics(app) : null)
     : null;
