@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 30, 30, 30;
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 250, 250, 250;
+  --primary: 236, 57, 68;
+  /* Hepsieemlak Red */
+  --primary-dark: 200, 45, 55;
+  --secondary: 45, 52, 71;
+  --gray-light: 243, 244, 246;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: white;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300;
+  }
+
+  .premium-button {
+    @apply px-6 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition-all duration-300 shadow-md active:scale-95;
+  }
+
+  .section-title {
+    @apply text-3xl font-black text-[#333] mb-8 tracking-tighter;
+  }
+
+  .red-hero {
+    @apply bg-primary text-white py-20 px-6 relative overflow-hidden;
+    background-image: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+  }
+}
+
+/* no-scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
