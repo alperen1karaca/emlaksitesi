@@ -5,6 +5,8 @@ export interface Listing {
     price: number;
     type: "SATILIK" | "KİRALIK";
     category: "KONUT" | "OFİS" | "ARSA";
+    isFeatured?: boolean; // Reklam / Öne Çıkan
+    featuredUntil?: any; // Expiration date for doping (Firestore Timestamp or Unix MS)
     createdAt?: any; // Firestore Timestamp
 
     // Location Info
@@ -75,6 +77,8 @@ export interface Listing {
     videoUrl?: string;
     sahibindenUrl?: string;
     agentId?: string; // Linked Agent
+    userId?: string; // ID of the user who submitted the listing
+    status: "approved" | "pending" | "rejected";
 }
 
 export interface Agent {
@@ -90,9 +94,11 @@ export interface Agent {
 export interface HeroSlide {
     id?: string;
     imageUrl: string;
+    videoUrl?: string;
     title?: string;
     subtitle?: string;
     order: number;
+    duration?: number; // Slayt süresi (saniye)
     createdAt?: any;
 }
 

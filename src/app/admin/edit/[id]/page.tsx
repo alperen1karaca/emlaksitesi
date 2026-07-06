@@ -2,12 +2,12 @@
 import { useState, useEffect } from "react";
 import { db, auth } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
 import { useRouter, useParams } from "next/navigation";
 import ListingForm from "@/components/admin/ListingForm";
 import { Listing } from "@/types/listing";
 import { Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import AdminGuard from "@/components/admin/AdminGuard";
 
 export default function EditListingPage() {
     const { id } = useParams();
@@ -17,9 +17,11 @@ export default function EditListingPage() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
+        /*
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (!user) router.push("/admin");
         });
+        */
 
         const fetchListing = async () => {
             if (!id) return;
@@ -39,7 +41,9 @@ export default function EditListingPage() {
         };
 
         fetchListing();
-        return () => unsubscribe();
+        return () => {
+            // unsubscribe();
+        };
     }, [id]);
 
     const handleUpdate = async (formData: any, imageUrls: string[]) => {
@@ -64,8 +68,8 @@ export default function EditListingPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <Loader2 className="animate-spin text-primary" size={40} />
+            <div className="min-h-screen flex items-center justify-center bg-neutral-100">
+                <Loader2 className="animate-spin text-[#E10600]" size={40} />
             </div>
         );
     }
@@ -73,17 +77,19 @@ export default function EditListingPage() {
     if (!listing) return null;
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 lg:p-12">
-            <div className="max-w-6xl mx-auto">
-                <Link
-                    href="/admin/dashboard"
-                    className="inline-flex items-center gap-2 text-gray-400 hover:text-primary transition-colors font-bold uppercase tracking-widest text-[10px] mb-8 group"
-                >
-                    <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-                    Panel'e Geri Dön
-                </Link>
-                <ListingForm initialData={listing} onSubmit={handleUpdate} loading={saving} />
+        <AdminGuard>
+            <div className="min-h-screen bg-neutral-100 p-6 lg:p-12">
+                <div className="max-w-6xl mx-auto">
+                    <Link
+                        href="/admin/dashboard"
+                        className="inline-flex items-center gap-2 text-neutral-400 hover:text-[#E10600] transition-colors font-bold uppercase tracking-widest text-[10px] mb-8 group"
+                    >
+                        <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                        Panel'e Geri Dön
+                    </Link>
+                    <ListingForm initialData={listing} onSubmit={handleUpdate} loading={saving} />
+                </div>
             </div>
-        </div>
+        </AdminGuard>
     );
 }

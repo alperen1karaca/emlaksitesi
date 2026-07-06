@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Roboto, Montserrat, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import "leaflet/dist/leaflet.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const roboto = Roboto({ weight: ["300", "400", "500", "700"], subsets: ["latin"], variable: "--font-roboto" });
+const montserrat = Montserrat({ weight: ["400", "500", "700", "800", "900"], subsets: ["latin"], variable: "--font-montserrat" });
+const playfair = Playfair_Display({ weight: ["400", "600", "700"], subsets: ["latin"], variable: "--font-playfair" });
 
 export const metadata: Metadata = {
     title: "SS Gayrimenkul | Lüks Konut ve Yatırım Danışmanlığı",
@@ -11,8 +14,11 @@ export const metadata: Metadata = {
 
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import CurrencyTicker from "@/components/layout/CurrencyTicker";
 import GoogleMap from "@/components/layout/GoogleMap";
+import ScrollToTop from "@/components/layout/ScrollToTop";
+import FloatingWhatsApp from "@/components/layout/FloatingWhatsApp";
+import { AuthProvider } from "@/context/AuthContext";
+import { GlobalAtmosphere } from "@/components/common/LineAnimations";
 
 export default function RootLayout({
     children,
@@ -20,17 +26,21 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="tr">
-            <body className={inter.className}>
-                <header className="fixed top-0 w-full z-50">
-                    <CurrencyTicker />
-                    <Navbar />
-                </header>
-                <main className="min-h-screen pt-[100px]">
-                    {children}
-                </main>
-                <GoogleMap />
-                <Footer />
+        <html lang="tr" className={`${roboto.variable} ${montserrat.variable} ${playfair.variable}`}>
+            <body className="font-sans bg-background text-foreground antialiased" suppressHydrationWarning>
+                <AuthProvider>
+                    <GlobalAtmosphere />
+                    <header className="fixed top-0 w-full z-[1001]">
+                        <Navbar />
+                    </header>
+                    <main className="min-h-screen pt-[70px]">
+                        {children}
+                    </main>
+                    <GoogleMap />
+                    <Footer />
+                    <ScrollToTop />
+                    <FloatingWhatsApp />
+                </AuthProvider>
             </body>
         </html>
     );

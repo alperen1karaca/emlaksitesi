@@ -5,6 +5,8 @@ import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp
 import { Agent } from "@/types/listing";
 import { Plus, Trash2, Edit2, Save, X, User, Phone, Mail, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import AdminGuard from "@/components/admin/AdminGuard";
+import ImageCropper from "@/components/admin/ImageCropper";
 
 export default function AgentsPage() {
     const [agents, setAgents] = useState<Agent[]>([]);
@@ -20,6 +22,10 @@ export default function AgentsPage() {
         email: "",
         imageUrl: ""
     });
+
+    // Cropping State
+    const [croppingImage, setCroppingImage] = useState<string | null>(null);
+    const [originalFile, setOriginalFile] = useState<File | null>(null);
 
     useEffect(() => {
         fetchAgents();
@@ -40,13 +46,24 @@ export default function AgentsPage() {
         }
     };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.[0]) return;
+        const file = e.target.files[0];
+        setOriginalFile(file);
+        const reader = new FileReader();
+        reader.onload = () => {
+            setCroppingImage(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleCropComplete = async (blob: Blob) => {
+        if (!originalFile) return;
         setUploading(true);
+        setCroppingImage(null);
         try {
-            const file = e.target.files[0];
             const formDataUpload = new FormData();
-            formDataUpload.append("file", file);
+            formDataUpload.append("file", new File([blob], originalFile.name, { type: "image/jpeg" }));
 
             const response = await fetch("/api/upload", {
                 method: "POST",
@@ -65,6 +82,7 @@ export default function AgentsPage() {
             alert("Resim yüklenirken bir hata oluştu: " + error.message);
         } finally {
             setUploading(false);
+            setOriginalFile(null);
         }
     };
 
@@ -125,172 +143,186 @@ export default function AgentsPage() {
     };
 
     return (
-        <div className="p-8 lg:p-12 max-w-7xl mx-auto min-h-screen bg-[#f8f9fa]">
-            <Link
-                href="/admin/dashboard"
-                className="inline-flex items-center gap-2 text-gray-400 hover:text-primary transition-colors font-bold uppercase tracking-widest text-[10px] mb-8 group"
-            >
-                <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-                Panel'e Geri Dön
-            </Link>
-
-            <div className="flex justify-between items-center mb-12">
-                <div>
-                    <h1 className="text-4xl font-black tracking-tighter uppercase text-secondary">Danışman Yönetimi</h1>
-                    <p className="text-gray-400 font-medium">Ekibinizi yönetin ve ilanlara atayın.</p>
-                </div>
-                <button
-                    onClick={() => {
-                        setEditingAgent(null);
-                        setFormData({ name: "", title: "Gayrimenkul Danışmanı", phone: "", email: "", imageUrl: "" });
-                        setIsModalOpen(true);
-                    }}
-                    className="bg-primary text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-primary/20 hover:scale-105 transition-all uppercase tracking-widest text-xs"
+        <AdminGuard>
+            <div className="p-8 lg:p-12 max-w-7xl mx-auto min-h-screen bg-white">
+                <Link
+                    href="/admin/dashboard"
+                    className="inline-flex items-center gap-2 text-neutral-400 hover:text-[#E10600] transition-colors font-bold uppercase tracking-widest text-[10px] mb-8 group"
                 >
-                    <Plus size={20} /> Yeni Danışman Ekle
-                </button>
-            </div>
+                    <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                    Panel'e Geri Dön
+                </Link>
 
-            {loading && agents.length === 0 ? (
-                <div className="flex justify-center items-center h-64">
-                    <Loader2 className="animate-spin text-primary" size={48} />
+                <div className="flex justify-between items-center mb-12">
+                    <div>
+                        <h1 className="text-4xl font-black tracking-tighter uppercase text-black">Danışman Yönetimi</h1>
+                        <p className="text-neutral-400 font-medium">Ekibinizi yönetin ve ilanlara atayın.</p>
+                    </div>
+                    <button
+                        onClick={() => {
+                            setEditingAgent(null);
+                            setFormData({ name: "", title: "Gayrimenkul Danışmanı", phone: "", email: "", imageUrl: "" });
+                            setIsModalOpen(true);
+                        }}
+                        className="bg-[#E10600] text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-[#E10600]/20 hover:scale-105 transition-all uppercase tracking-widest text-xs"
+                    >
+                        <Plus size={20} /> Yeni Danışman Ekle
+                    </button>
                 </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {agents.map((agent) => (
-                        <div key={agent.id} className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 group hover:shadow-xl transition-all">
-                            <div className="flex items-center gap-6 mb-8">
-                                <div className="w-20 h-20 rounded-2xl bg-gray-50 overflow-hidden border border-gray-100 flex items-center justify-center shrink-0">
-                                    {agent.imageUrl ? (
-                                        <img src={agent.imageUrl} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <User className="text-gray-300" size={32} />
-                                    )}
+
+                {loading && agents.length === 0 ? (
+                    <div className="flex justify-center items-center h-64">
+                        <Loader2 className="animate-spin text-[#E10600]" size={48} />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {agents.map((agent) => (
+                            <div key={agent.id} className="bg-white rounded-3xl p-8 shadow-sm border border-neutral-400/30 group hover:shadow-xl transition-all">
+                                <div className="flex items-center gap-6 mb-8">
+                                    <div className="w-20 h-20 rounded-2xl bg-neutral-100 overflow-hidden border border-neutral-400/30 flex items-center justify-center shrink-0">
+                                        {agent.imageUrl ? (
+                                            <img src={agent.imageUrl} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User className="text-neutral-400/70" size={32} />
+                                        )}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h3 className="font-black text-black uppercase tracking-tighter truncate text-lg leading-tight">{agent.name}</h3>
+                                        <p className="text-[#E10600] font-bold text-xs uppercase tracking-widest">{agent.title}</p>
+                                    </div>
                                 </div>
-                                <div className="min-w-0">
-                                    <h3 className="font-black text-secondary uppercase tracking-tighter truncate text-lg leading-tight">{agent.name}</h3>
-                                    <p className="text-primary font-bold text-xs uppercase tracking-widest">{agent.title}</p>
+
+                                <div className="space-y-4 mb-8">
+                                    <div className="flex items-center gap-3 text-neutral-400 font-medium text-sm">
+                                        <Phone size={16} className="text-[#E10600]/40" />
+                                        <span>{agent.phone}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-neutral-400 font-medium text-sm">
+                                        <Mail size={16} className="text-[#E10600]/40" />
+                                        <span className="truncate">{agent.email}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 border-t border-gray-50 pt-6">
+                                    <button
+                                        onClick={() => openEdit(agent)}
+                                        className="flex-1 bg-neutral-100 text-black font-black text-[10px] uppercase tracking-widest py-3 rounded-xl hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Edit2 size={14} /> Düzenle
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(agent.id!, agent.imageUrl)}
+                                        className="w-12 h-12 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all flex items-center justify-center"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
                                 </div>
                             </div>
+                        ))}
+                    </div>
+                )}
 
-                            <div className="space-y-4 mb-8">
-                                <div className="flex items-center gap-3 text-gray-400 font-medium text-sm">
-                                    <Phone size={16} className="text-primary/40" />
-                                    <span>{agent.phone}</span>
+                {isModalOpen && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-6">
+                        <div className="bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+                            <div className="p-10">
+                                <div className="flex justify-between items-center mb-10">
+                                    <h2 className="text-2xl font-black text-black tracking-tighter uppercase">
+                                        {editingAgent ? "Danışmanı Düzenle" : "Yeni Danışman"}
+                                    </h2>
+                                    <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 bg-neutral-100 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all">
+                                        <X size={20} className="text-neutral-400" />
+                                    </button>
                                 </div>
-                                <div className="flex items-center gap-3 text-gray-400 font-medium text-sm">
-                                    <Mail size={16} className="text-primary/40" />
-                                    <span className="truncate">{agent.email}</span>
-                                </div>
-                            </div>
 
-                            <div className="flex gap-3 border-t border-gray-50 pt-6">
-                                <button
-                                    onClick={() => openEdit(agent)}
-                                    className="flex-1 bg-gray-50 text-secondary font-black text-[10px] uppercase tracking-widest py-3 rounded-xl hover:bg-secondary hover:text-white transition-all flex items-center justify-center gap-2"
-                                >
-                                    <Edit2 size={14} /> Düzenle
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(agent.id!, agent.imageUrl)}
-                                    className="w-12 h-12 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all flex items-center justify-center"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+                                <form onSubmit={handleSubmit} className="space-y-8">
+                                    <div className="flex justify-center mb-8">
+                                        <label className="relative group cursor-pointer">
+                                            <div className="w-32 h-32 rounded-[32px] bg-neutral-100 overflow-hidden border-2 border-dashed border-neutral-400/50 group-hover:border-[#E10600] transition-all flex items-center justify-center">
+                                                {formData.imageUrl ? (
+                                                    <img src={formData.imageUrl} className="w-full h-full object-cover" />
+                                                ) : uploading ? (
+                                                    <Loader2 className="animate-spin text-[#E10600]" size={32} />
+                                                ) : (
+                                                    <Plus className="text-neutral-400/70 group-hover:text-[#E10600] transition-all" size={32} />
+                                                )}
+                                            </div>
+                                            <input type="file" className="hidden" onChange={handleImageUpload} accept="image/*" />
+                                            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white shadow-lg rounded-xl flex items-center justify-center text-[#E10600] border border-neutral-400/30">
+                                                <User size={20} />
+                                            </div>
+                                        </label>
+                                    </div>
 
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-secondary/80 backdrop-blur-md z-[100] flex items-center justify-center p-6">
-                    <div className="bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-                        <div className="p-10">
-                            <div className="flex justify-between items-center mb-10">
-                                <h2 className="text-2xl font-black text-secondary tracking-tighter uppercase">
-                                    {editingAgent ? "Danışmanı Düzenle" : "Yeni Danışman"}
-                                </h2>
-                                <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all">
-                                    <X size={20} className="text-gray-400" />
-                                </button>
-                            </div>
-
-                            <form onSubmit={handleSubmit} className="space-y-8">
-                                <div className="flex justify-center mb-8">
-                                    <label className="relative group cursor-pointer">
-                                        <div className="w-32 h-32 rounded-[32px] bg-gray-50 overflow-hidden border-2 border-dashed border-gray-200 group-hover:border-primary transition-all flex items-center justify-center">
-                                            {formData.imageUrl ? (
-                                                <img src={formData.imageUrl} className="w-full h-full object-cover" />
-                                            ) : uploading ? (
-                                                <Loader2 className="animate-spin text-primary" size={32} />
-                                            ) : (
-                                                <Plus className="text-gray-300 group-hover:text-primary transition-all" size={32} />
-                                            )}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 block">Ad Soyad</label>
+                                            <input
+                                                required
+                                                type="text"
+                                                value={formData.name}
+                                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                                className="w-full bg-neutral-100 border border-neutral-400/30 p-4 rounded-2xl font-bold text-black focus:border-[#E10600] outline-none transition-all"
+                                            />
                                         </div>
-                                        <input type="file" className="hidden" onChange={handleImageUpload} accept="image/*" />
-                                        <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white shadow-lg rounded-xl flex items-center justify-center text-primary border border-gray-100">
-                                            <User size={20} />
+                                        <div>
+                                            <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 block">Ünvan</label>
+                                            <input
+                                                required
+                                                type="text"
+                                                value={formData.title}
+                                                onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                                className="w-full bg-neutral-100 border border-neutral-400/30 p-4 rounded-2xl font-bold text-black focus:border-[#E10600] outline-none transition-all"
+                                            />
                                         </div>
-                                    </label>
-                                </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 block">Telefon</label>
+                                            <input
+                                                required
+                                                type="text"
+                                                value={formData.phone}
+                                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                                className="w-full bg-neutral-100 border border-neutral-400/30 p-4 rounded-2xl font-bold text-black focus:border-[#E10600] outline-none transition-all"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3 block">E-Posta</label>
+                                            <input
+                                                required
+                                                type="email"
+                                                value={formData.email}
+                                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                                className="w-full bg-neutral-100 border border-neutral-400/30 p-4 rounded-2xl font-bold text-black focus:border-[#E10600] outline-none transition-all"
+                                            />
+                                        </div>
+                                    </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block">Ad Soyad</label>
-                                        <input
-                                            required
-                                            type="text"
-                                            value={formData.name}
-                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl font-bold text-secondary focus:border-primary outline-none transition-all"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block">Ünvan</label>
-                                        <input
-                                            required
-                                            type="text"
-                                            value={formData.title}
-                                            onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                            className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl font-bold text-secondary focus:border-primary outline-none transition-all"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block">Telefon</label>
-                                        <input
-                                            required
-                                            type="text"
-                                            value={formData.phone}
-                                            onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                            className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl font-bold text-secondary focus:border-primary outline-none transition-all"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block">E-Posta</label>
-                                        <input
-                                            required
-                                            type="email"
-                                            value={formData.email}
-                                            onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                            className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl font-bold text-secondary focus:border-primary outline-none transition-all"
-                                        />
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-widest text-sm shadow-2xl shadow-primary/30 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all mt-6"
-                                >
-                                    {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                                    KAYDET
-                                </button>
-                            </form>
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full bg-[#E10600] text-white py-5 rounded-2xl font-black uppercase tracking-widest text-sm shadow-2xl shadow-[#E10600]/30 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all mt-6"
+                                    >
+                                        {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                                        KAYDET
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )}
+
+                {croppingImage && (
+                    <ImageCropper
+                        image={croppingImage}
+                        aspect={1 / 1}
+                        onCropComplete={handleCropComplete}
+                        onCancel={() => {
+                            setCroppingImage(null);
+                            setOriginalFile(null);
+                        }}
+                    />
+                )}
+            </div>
+        </AdminGuard>
     );
 }
