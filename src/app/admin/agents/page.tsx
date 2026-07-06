@@ -57,7 +57,9 @@ export default function AgentsPage() {
         reader.readAsDataURL(file);
     };
 
-    const handleCropComplete = async (blob: Blob) => {
+    const handleCropComplete = async (result: Blob | { x: number; y: number; startTime?: number; duration?: number }) => {
+        if (!(result instanceof Blob)) return;
+        const blob = result;
         if (!originalFile) return;
         setUploading(true);
         setCroppingImage(null);

@@ -117,7 +117,9 @@ export default function ListingForm({ initialData, onSubmit, loading }: ListingF
         }
     }, [cropQueue, currentCropImage]);
 
-    const handleCropComplete = (blob: Blob) => {
+    const handleCropComplete = (result: Blob | { x: number; y: number; startTime?: number; duration?: number }) => {
+        if (!(result instanceof Blob)) return;
+        const blob = result;
         const file = new File([blob], cropQueue[0].name, { type: "image/jpeg" });
         setImages(prev => [...prev, file]);
         setPreviews(prev => [...prev, URL.createObjectURL(blob)]);
