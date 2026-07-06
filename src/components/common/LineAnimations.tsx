@@ -11,8 +11,10 @@ interface SceneProps {
  * Utility: Generate stable random seeds for a component instance
  */
 const useRandomValues = (count: number) => {
-  return useMemo(() => {
-    return Array.from({ length: count }, () => ({
+  const [values, setValues] = useState<any[]>([]);
+
+  useEffect(() => {
+    setValues(Array.from({ length: count }, () => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
       scale: 0.5 + Math.random() * 1.5,
@@ -20,8 +22,10 @@ const useRandomValues = (count: number) => {
       duration: 10 + Math.random() * 20,
       opacity: 0.1 + Math.random() * 0.4,
       rotation: Math.random() * 360,
-    }));
+    })));
   }, [count]);
+
+  return values;
 };
 
 /**
